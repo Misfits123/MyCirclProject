@@ -49,7 +49,7 @@ public class VictoryManager : MonoBehaviour
 
             for (int i = 0; i < CommonValues.MaxNumberOfPlayers; i++)
             {
-                if (CirCl.GetButtonDown(i, 0, false))
+                if (CirCl.GetButtonDown(i, 0))
                 {
                     oAudioManager.playMaskDisapear();
                     CanvasObjectArray[0].gameObject.SetActive(false);

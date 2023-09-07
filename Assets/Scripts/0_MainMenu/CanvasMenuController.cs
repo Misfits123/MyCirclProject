@@ -96,7 +96,7 @@ public class CanvasMenuController : MonoBehaviour
             // close info text
             for (int i = 0; i < CommonValues.MaxNumberOfPlayers; i++)
             {
-                if (CirCl.GetButtonDown(i, 0, false) && iPopUpCounter == 0)
+                if (CirCl.GetButtonDown(i, 0) && iPopUpCounter == 0)
                 {
                     CommonValues.iEventSystemPlayer = i + 1;
                     SetEventSystemPlayer();

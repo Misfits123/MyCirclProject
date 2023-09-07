@@ -61,48 +61,11 @@ public class PlayerAssignment : MonoBehaviour
     //    joystickSetArray = new bool[] { false, false, false, false, false, false, false, false };
     //}
 
-    //// Update is called once per frame
-    //private void Update()
-    //{
-    //    // close info text
-    //    for (int i = 1; i <= CommonValues.MaxNumberOfPlayers; i++)
-    //    {
-    //        if (Input.GetButtonDown(CommonValues.sControllerDefaultArray[i - 1, 3]) && joystickSetArray[i - 1] == false)
-    //        {
-    //            joystickSetArray[i - 1] = true;
-    //            joystickNewArray[joystickCounter - 1, 0] = CommonValues.sControllerDefaultArray[i - 1, 0];
-    //            joystickNewArray[joystickCounter - 1, 1] = CommonValues.sControllerDefaultArray[i - 1, 1];
-    //            joystickNewArray[joystickCounter - 1, 2] = CommonValues.sControllerDefaultArray[i - 1, 2];
-    //            joystickNewArray[joystickCounter - 1, 3] = CommonValues.sControllerDefaultArray[i - 1, 3];
-    //            PlayerPrefs.SetInt("PlayerPosition" + joystickCounter.ToString(), i);
-    //            if (setEventSystemPlayer == false)
-    //            {
-    //                setEventSystemPlayer = true;
-    //                CommonValues.iEventSystemPlayer = i;
-    //                PlayerPrefs.SetInt("EventSystemPlayer", i);
-    //                eventSystemPlayer.horizontalAxis = "P" + CommonValues.iEventSystemPlayer.ToString() + "_Horizontal";
-    //                eventSystemPlayer.verticalAxis = "P" + CommonValues.iEventSystemPlayer.ToString() + "_Vertical";
-    //                eventSystemPlayer.submitButton = "P" + CommonValues.iEventSystemPlayer.ToString() + "_Button1";
-    //                eventSystemPlayer.cancelButton = "P" + CommonValues.iEventSystemPlayer.ToString() + "_Button0";
-    //            }
-    //            joystickCounter += 1;
-    //            SetJoystickInfo();
-    //            audioManagerComp.playMaskDisapear();
-    //        }
-    //    }
-    //    if (joystickCounter > 8)
-    //    {
-    //        gameObject.SetActive(false);
-    //        audioManagerComp.playMaskDisapear();
-    //        joystickMessage.GetComponent<Animator>().SetBool("Play", false);
-    //        CommonValues.sControllerInputArray = joystickNewArray;
-    //        PlayerPrefs.SetInt("PlayerAssignment", 1);
-    //        SetNumberOfJoysticks();
-    //        SetButtonActive();
-    //        SetEventSystemPlayer();
-    //        CommonValues.bPopUpActive = false;
-    //    }
-    //}
+    // Update is called once per frame
+    private void Update()
+    {
+
+    }
 
     //public void ClickNoJoystick()
     //{

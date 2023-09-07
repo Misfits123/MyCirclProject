@@ -58,8 +58,8 @@ public class PlayerMovement : MonoBehaviour
         // store the input axes
         float f_horizontal = 0f;
         float f_vertical = 0f;
-        f_horizontal = CirCl.GetAxis(iPlayerIndex - 1, 'h', false);
-        f_vertical = CirCl.GetAxis(iPlayerIndex - 1, 'v', false);
+        f_horizontal = CirCl.GetAxis(iPlayerIndex - 1, 'h');
+        f_vertical = CirCl.GetAxis(iPlayerIndex - 1, 'v');
         decimal d_horizontal = Math.Round((decimal)f_horizontal, 1);
         decimal d_vertical = Math.Round((decimal)f_vertical, 1);
         MoveNew((float)d_horizontal, (float)d_vertical);

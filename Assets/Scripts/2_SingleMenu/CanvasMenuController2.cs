@@ -57,7 +57,7 @@ public class CanvasMenuController2 : MonoBehaviour
             // close info text
             for(int i = 0; i < CommonValues.MaxNumberOfPlayers; i++)
             {
-                if (CirCl.GetButtonDown(i, 0, false))
+                if (CirCl.GetButtonDown(i, 0))
                 {
                     for(int j = 0; j < oCanvasObjectArray.Length; j++)
                     {

@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class CirCl : MonoBehaviour
 {
-    public Text debug;
+    public Text stateText;
     public delegate void OnBluetoothInput(int[,] controller);
     public static event OnBluetoothInput onBluetoothInput;
 
@@ -48,6 +48,9 @@ public class CirCl : MonoBehaviour
         { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
         };
 
+    // bluetooth connection state
+    public static string connectionState = "";
+
     private enum States
     {
         Idle,
@@ -62,20 +65,18 @@ public class CirCl : MonoBehaviour
         Unsubscribe,
         Disconnect,
     }
-
+    private static bool connectedViaBluetooth = false;
     private static float timer = 0f;
     private static string _deviceName = "CirCl";
     private static string _serviceUUID = "e80f2064-7a9e-4c5b-91bb-ae5557952a0c";
     private static string _characteristicUUID = "e5282bd6-337a-4244-b4f0-0e73bd4c34b5";
     private static bool readingActive = false;
-
-    private static bool _connected = false;
     private static float _timeout = 0f;
     private static States _state = States.Idle;
     private static string _deviceAddress;
     private static bool _foundCharacteristicUUID = false;
     private static bool _rssiOnly = false;
-    private static bool[,] button_down = new bool[,] {
+    private static bool[,] buttonDownArray = new bool[,] {
         { false, false },
         { false, false },
         { false, false },
@@ -85,7 +86,7 @@ public class CirCl : MonoBehaviour
         { false, false },
         { false, false },
     };
-    private static bool[,] button_up = new bool[,] {
+    private static bool[,] buttonUpArray = new bool[,] {
         { false, false },
         { false, false },
         { false, false },
@@ -95,41 +96,41 @@ public class CirCl : MonoBehaviour
         { false, false },
         { false, false },
     };
-    private static bool return_it_once = true;
 
     private string StatusMessage
     {
         set
         {
             BluetoothLEHardwareInterface.Log(value);
-            debug.text = value.ToString();
+            connectionState = value.ToString();
+            stateText.text = value.ToString();
         }
     }
 
-    public static bool GetButton(int player, int button, bool use_bluetooth)
+    public static bool GetButton(int player, int button)
     {
-        if(use_bluetooth)
+        if(connectedViaBluetooth)
         {
             if(button == 0)
             {
                 if (controllerBleArray[player, 5] == 16 || controllerBleArray[player, 5] == 17)
                 {
-                    return false;
+                    return true;
                 }
                 else
                 {
-                    return true;
+                    return false;
                 }
             }
             else
             {
                 if (controllerBleArray[player, 5] == 1 || controllerBleArray[player, 5] == 17)
                 {
-                    return false;
+                    return true;
                 }
                 else
                 {
-                    return true;
+                    return false;
                 }
             }
         }
@@ -139,26 +140,26 @@ public class CirCl : MonoBehaviour
         }
     }
 
-    public static bool GetButtonDown(int player, int button, bool use_bluetooth)
+    public static bool GetButtonDown(int player, int button)
     {
-        if (use_bluetooth)
+        if (connectedViaBluetooth)
         {
             if (controllerBleArray[player, 5] == 0)
             {
-                button_down[player, 0] = false;
-                button_down[player, 1] = false;
+                buttonDownArray[player, 0] = false;
+                buttonDownArray[player, 1] = false;
                 return false;
             }
-            else if (controllerBleArray[player, 5] == 1 && button_down[player, 1] == false && button == 1)
+            else if (controllerBleArray[player, 5] == 1 && buttonDownArray[player, 1] == false && button == 1)
             {
-                button_down[player, 0] = false;
-                button_down[player, 1] = true;
+                buttonDownArray[player, 0] = false;
+                buttonDownArray[player, 1] = true;
                 return true;
             }
-            else if (controllerBleArray[player, 5] == 16 && button_down[player, 0] == false && button == 0)
+            else if (controllerBleArray[player, 5] == 16 && buttonDownArray[player, 0] == false && button == 0)
             {
-                button_down[player, 0] = true;
-                button_down[player, 1] = false;
+                buttonDownArray[player, 0] = true;
+                buttonDownArray[player, 1] = false;
                 return true;
             }
             else
@@ -173,26 +174,26 @@ public class CirCl : MonoBehaviour
         }
     }
 
-    public static bool GetButtonUp(int player, int button, bool use_bluetooth)
+    public static bool GetButtonUp(int player, int button)
     {
-        if (use_bluetooth)
+        if (connectedViaBluetooth)
         {
             if (controllerBleArray[player, 5] == 17)
             {
-                button_down[player, 0] = false;
-                button_down[player, 1] = false;
+                buttonDownArray[player, 0] = false;
+                buttonDownArray[player, 1] = false;
                 return false;
             }
-            else if (controllerBleArray[player, 5] == 16 && button_down[player, 1] == false && button == 1)
+            else if (controllerBleArray[player, 5] == 16 && buttonDownArray[player, 1] == false && button == 1)
             {
-                button_down[player, 0] = false;
-                button_down[player, 1] = true;
+                buttonDownArray[player, 0] = false;
+                buttonDownArray[player, 1] = true;
                 return true;
             }
-            else if (controllerBleArray[player, 5] == 1 && button_down[player, 0] == false && button == 0)
+            else if (controllerBleArray[player, 5] == 1 && buttonDownArray[player, 0] == false && button == 0)
             {
-                button_down[player, 0] = true;
-                button_down[player, 1] = false;
+                buttonDownArray[player, 0] = true;
+                buttonDownArray[player, 1] = false;
                 return true;
             }
             else
@@ -206,11 +207,11 @@ public class CirCl : MonoBehaviour
         }
     }
 
-    public static float GetAxis(int player, char axis, bool use_bluetooth)
+    public static float GetAxis(int player, char axis)
     {
         if(axis == 'h')
         {
-            if (use_bluetooth)
+            if (connectedViaBluetooth)
             {
                 if (controllerBleArray[player, 0] == 1)
                 {
@@ -235,7 +236,7 @@ public class CirCl : MonoBehaviour
         }
         else if(axis == 'v')
         {
-            if (use_bluetooth)
+            if (connectedViaBluetooth)
             {
                 if (controllerBleArray[player, 1] == 1)
                 {
@@ -263,7 +264,7 @@ public class CirCl : MonoBehaviour
 
     private void Reset()
     {
-        _connected = false;
+        connectedViaBluetooth = false;
         _timeout = 0f;
         _state = States.Idle;
         _deviceAddress = null;
@@ -377,7 +378,7 @@ public class CirCl : MonoBehaviour
         }, (error) =>
         {
 
-            StatusMessage = "STATUS";// + error;
+            StatusMessage = "";// + error;
         });
         if (readingActive == false)
         {
@@ -402,14 +403,14 @@ public class CirCl : MonoBehaviour
                         case States.Idle:
                             break;
                         case States.Scan:
-                            StatusMessage = "SCANNING...";// FOR " + _deviceName;
+                            StatusMessage = "SCANNING FOR CIRCL ...";
                             BluetoothLEHardwareInterface.ScanForPeripheralsWithServices(null, (address, name) =>
                             {
                                 if (!_rssiOnly)
                                 {
                                     if (name.Contains(_deviceName))
                                     {
-                                        StatusMessage = "FOUND!";// + name;
+                                        StatusMessage = "FOUND CIRCL!";
                                         _deviceAddress = address;
                                         SetState(States.Connect, 0.5f);
                                     }
@@ -418,14 +419,14 @@ public class CirCl : MonoBehaviour
                             {
                                 if (name.Contains(_deviceName))
                                 {
-                                    StatusMessage = "FOUND!";// + name;
+                                    StatusMessage = "FOUND CIRCL!";
                                     _deviceAddress = address;
                                     SetState(States.Connect, 0.5f);
                                 }
                             }, false);
                             break;
                         case States.Connect:
-                            StatusMessage = "CONNECTING...";
+                            StatusMessage = "CONNECTING TO CIRCL ...";
                             _foundCharacteristicUUID = false;
                             BluetoothLEHardwareInterface.ConnectToPeripheral(_deviceAddress, null, null, (address, serviceUUID, characteristicUUID) =>
                             {
@@ -433,18 +434,18 @@ public class CirCl : MonoBehaviour
                                 BluetoothLEHardwareInterface.StopScan();
                                 if (IsEqual(serviceUUID, _serviceUUID))
                                 {
-                                    StatusMessage = "FOUND!";
+                                    StatusMessage = "FOUND CIRCL!";
                                     _foundCharacteristicUUID = _foundCharacteristicUUID || IsEqual(characteristicUUID, _characteristicUUID);
                                     if (_foundCharacteristicUUID)
                                     {
-                                        _connected = true;
+                                        connectedViaBluetooth = true;
                                         SetState(States.Subscribe, 2f);
                                     }
                                 }
                             });
                             break;
                         case States.Subscribe:
-                            StatusMessage = "SUBSCRIBING...";
+                            StatusMessage = "SUBSCRIBING TO CIRCL ...";
                             BluetoothLEHardwareInterface.SubscribeCharacteristicWithDeviceAddress(_deviceAddress, _serviceUUID, _characteristicUUID, (notifyAddress, notifyCharacteristic) =>
                             {
                                 BluetoothLEHardwareInterface.ReadCharacteristic(_deviceAddress, _serviceUUID, _characteristicUUID, (characteristic, bytes) =>
@@ -474,14 +475,14 @@ public class CirCl : MonoBehaviour
                             break;
                         case States.Disconnect:
                             StatusMessage = "DISCONNECTED!";
-                            if (_connected)
+                            if (connectedViaBluetooth)
                             {
                                 BluetoothLEHardwareInterface.DisconnectPeripheral(_deviceAddress, (address) =>
                                 {
                                     StatusMessage = "DISCONNECTED!";
                                     BluetoothLEHardwareInterface.DeInitialize(() =>
                                     {
-                                        _connected = false;
+                                        connectedViaBluetooth = false;
                                         _state = States.Idle;
                                     });
                                 });

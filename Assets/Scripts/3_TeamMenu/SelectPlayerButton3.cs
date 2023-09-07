@@ -66,7 +66,7 @@ public class SelectPlayerButton3 : MonoBehaviour {
 
     void Update()
     {
-        if (CirCl.GetButtonDown(PlayerIndex - 1, 0, false))
+        if (CirCl.GetButtonDown(PlayerIndex - 1, 0))
         {
             // set player mode to player parameter array
             if (PlayerTeam == oPlayerModeArray.Length - 1)

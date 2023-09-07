@@ -12,7 +12,7 @@ public class CanvasMenuController1 : MonoBehaviour
         {
             for (int i = 0; i < CommonValues.MaxNumberOfPlayers; i++)
             {
-                if (CirCl.GetButtonDown(i, 0, false))
+                if (CirCl.GetButtonDown(i, 0))
                 {
                     // load new scene
                     SceneManager.LoadScene(CommonValues.sSceneArray[0]);

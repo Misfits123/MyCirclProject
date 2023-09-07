@@ -66,7 +66,7 @@ public class SelectPlayerButton : MonoBehaviour {
 
     void Update()
     {
-        if (CirCl.GetButtonDown(PlayerIndex - 1, 0, false))
+        if (CirCl.GetButtonDown(PlayerIndex - 1, 0))
         {
             // set player mode to player parameter array
             if (PlayerMode == 0 && PlayerIndex - 1 < CommonValues.MaxNumberOfPlayers)
