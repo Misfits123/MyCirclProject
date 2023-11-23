@@ -72,20 +72,20 @@ public class CanvasScenelessController : MonoBehaviour {
             //    }
             //}
 
-            if (sceneIndex != SceneManager.GetActiveScene().buildIndex)
-            {
-                sceneIndex = SceneManager.GetActiveScene().buildIndex;
-                SetEventSystemPlayer();
-            }
+            //if (sceneIndex != SceneManager.GetActiveScene().buildIndex)
+            //{
+            //    sceneIndex = SceneManager.GetActiveScene().buildIndex;
+            //    SetEventSystemPlayer();
+            //}
         }
     }
 
-    private void SetEventSystemPlayer()
-    {
-        eventSystemPlayer = GameObject.Find("EventSystem").gameObject.GetComponent<StandaloneInputModule>();
-        eventSystemPlayer.horizontalAxis = CirCl.controllerArray[CommonValues.iEventSystemPlayer - 1, 0];
-        eventSystemPlayer.verticalAxis = CirCl.controllerArray[CommonValues.iEventSystemPlayer - 1, 1];
-        eventSystemPlayer.cancelButton = CirCl.controllerArray[CommonValues.iEventSystemPlayer - 1, 2];
-        eventSystemPlayer.submitButton = CirCl.controllerArray[CommonValues.iEventSystemPlayer - 1, 3];
-    }
+    //private void SetEventSystemPlayer()
+    //{
+    //    eventSystemPlayer = GameObject.Find("EventSystem").gameObject.GetComponent<StandaloneInputModule>();
+    //    eventSystemPlayer.horizontalAxis = CirCl.controllerArray[CommonValues.iEventSystemPlayer - 1, 0];
+    //    eventSystemPlayer.verticalAxis = CirCl.controllerArray[CommonValues.iEventSystemPlayer - 1, 1];
+    //    eventSystemPlayer.cancelButton = CirCl.controllerArray[CommonValues.iEventSystemPlayer - 1, 2];
+    //    eventSystemPlayer.submitButton = CirCl.controllerArray[CommonValues.iEventSystemPlayer - 1, 3];
+    //}
 }

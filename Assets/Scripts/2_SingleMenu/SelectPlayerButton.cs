@@ -100,8 +100,6 @@ public class SelectPlayerButton : MonoBehaviour {
         {
             // set button active
             OkButton.GetComponent<Button>().interactable = true;
-            OkButton.GetComponent<Button>().Select();
-            OkButton.GetComponent<Button>().gameObject.SetActive(true);
         }
         else if (CommonValues.NumberOfPlayers <= 1)
         {

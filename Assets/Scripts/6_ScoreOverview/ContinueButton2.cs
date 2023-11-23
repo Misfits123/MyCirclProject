@@ -22,8 +22,6 @@ public class ContinueButton2 : MonoBehaviour {
             // set button inactive
             gameObject.GetComponent<Button>().interactable = false;
             MainMenuButton.GetComponent<Button>().interactable = true;
-            MainMenuButton.GetComponent<Button>().Select();
-            MainMenuButton.GetComponent<Button>().gameObject.SetActive(true);
         }
     }
     public void ClickButton()

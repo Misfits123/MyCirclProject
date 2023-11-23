@@ -72,7 +72,7 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         // exit game by pressing two buttons
-        if ((CirCl.GetButton(CommonValues.iEventSystemPlayer - 1, 0) && CirCl.GetButton(CommonValues.iEventSystemPlayer - 1, 1)))
+        if ((CirCl.GetButton(CommonValues.iEventSystemPlayer, 0) && CirCl.GetButton(CommonValues.iEventSystemPlayer, 1)))
         {
             timeExit -= Time.deltaTime;
             timeExitBar.fillAmount += Time.deltaTime / 3.0f;

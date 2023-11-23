@@ -9,7 +9,7 @@ using UnityEngine;
 public class CommonValues : MonoBehaviour
 {
     private static int iGameMode = 0;
-    public static int iEventSystemPlayer = 1;
+    public static int iEventSystemPlayer = 0;
     public static int iNumberOfJoysticks = 1;
     public static bool bPopUpActive = false;
     public static bool bCreateCanvasScenelessOnce = false;

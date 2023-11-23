@@ -1,13 +1,31 @@
 ﻿using System;
+using System.Net;
+using System.Net.Sockets;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class CirCl : MonoBehaviour
 {
     public Text stateText;
+    public static Button[] uiButtons;
+    public static int uiIndex = 0;
+    public static float uiTime = 0.4f;
+    public delegate void OnWiFiInput(int[,] controller);
+    public static event OnWiFiInput onWiFiInput;
     public delegate void OnBluetoothInput(int[,] controller);
     public static event OnBluetoothInput onBluetoothInput;
+
+    // wifi connection state
+    public static string connectionStateWiFi = "";
+    public static bool connectedViaWiFi = false;
+    private static bool readingWiFiActive = false;
+
+    // bluetooth connection state
+    public static string connectionStateBle = "";
+    public static bool connectedViaBluetooth = false;
+    private static bool readingBleActive = false;
 
     // using 8 player inputs from input manager settings
     // horizontal, vertical, button_0, button_1
@@ -35,9 +53,9 @@ public class CirCl : MonoBehaviour
         { KeyCode.LeftArrow, KeyCode.RightArrow, KeyCode.DownArrow, KeyCode.UpArrow, KeyCode.Space, KeyCode.Return }
         };
 
-    // using 8 player values from bluetooth interface
+    // using 8 player values from wifi/bluetooth interface
     // horizontal, vertical, angle, pitch, roll, button_0 & button_1
-    public static int[,] controllerBleArray = new int[,] {
+    public static int[,] controllerWirelessArray = new int[,] {
         { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
         { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
         { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
@@ -48,34 +66,6 @@ public class CirCl : MonoBehaviour
         { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
         };
 
-    // bluetooth connection state
-    public static string connectionState = "";
-
-    private enum States
-    {
-        Idle,
-        Scan,
-        ScanRSSI,
-        ReadRSSI,
-        Read,
-        Connect,
-        RequestMTU,
-        Subscribe,
-        Waiting,
-        Unsubscribe,
-        Disconnect,
-    }
-    private static bool connectedViaBluetooth = false;
-    private static float timer = 0f;
-    private static string _deviceName = "CirCl";
-    private static string _serviceUUID = "e80f2064-7a9e-4c5b-91bb-ae5557952a0c";
-    private static string _characteristicUUID = "e5282bd6-337a-4244-b4f0-0e73bd4c34b5";
-    private static bool readingActive = false;
-    private static float _timeout = 0f;
-    private static States _state = States.Idle;
-    private static string _deviceAddress;
-    private static bool _foundCharacteristicUUID = false;
-    private static bool _rssiOnly = false;
     private static bool[,] buttonDownArray = new bool[,] {
         { false, false },
         { false, false },
@@ -97,23 +87,147 @@ public class CirCl : MonoBehaviour
         { false, false },
     };
 
-    private string StatusMessage
+    private void Start()
     {
-        set
+#if UNITY_ANDROID
+        StartBleProcess();
+#endif
+#if UNITY_IOS
+        StartBleProcess();
+#endif
+#if UNITY_EDITOR
+        StartWiFiProcess();
+# endif
+    }
+
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        uiButtons = FindObjectsOfType<Button>();
+        uiIndex = 0;
+    }
+
+#region Testing + Debugging
+    //int changes = 0;
+    //bool test = false;
+
+    //private void Update()
+    //{
+    //    //stateText.text = controllerWirelessArray[0, 0].ToString();
+    //    if (controllerWirelessArray[0, 5] == 16)
+    //    {
+
+    //        //packageCounter += 1;
+    //        if (controllerWirelessArray[0, 0] == 1 && test == false)
+    //        {
+    //            test = true;
+    //        }
+    //        if (controllerWirelessArray[0, 0] == 2 && test == true)
+    //        {
+    //            test = false;
+    //            changes += 1;
+    //            stateText.text = changes.ToString() + " | " + packageCounter.ToString();
+    //        }
+    //        //if(packageTimer < 0)
+    //        //{
+    //        //    stateText.text += controllerWirelessArray[0, 0].ToString() + "\n";
+    //        //    packageTimer = 0.05f;
+    //        //}
+    //    }
+    //    else
+    //    {
+    //        packageTimer -= Time.deltaTime;
+    //    }
+    //    //else
+    //    //{
+    //    //    packageCounter = 0;
+    //    //}
+    //    if (packageTimer < 0f)
+    //    {
+    //        packageTimer = 1f;
+    //        changes = 0;
+    //        packageCounter = 0;
+    //        stateText.text = changes.ToString() + " | " + packageCounter.ToString();
+    //    }
+    //}
+#endregion
+
+#region Controller Input
+    public static void SelectUiButton(int player)
+    {
+        if(connectedViaWiFi || connectedViaBluetooth)
         {
-            BluetoothLEHardwareInterface.Log(value);
-            connectionState = value.ToString();
-            stateText.text = value.ToString();
+            uiTime -= Time.deltaTime;
+            if(uiTime < 0f)
+            {
+                if (controllerWirelessArray[player, 0] == 1)
+                {
+                    uiTime = 0.4f;
+                    uiIndex -= 1;
+                    if (uiIndex < 0)
+                    {
+                        uiIndex = uiButtons.Length - 1;
+                    }
+                    if (uiButtons[uiIndex].interactable == true)
+                    {
+                        uiButtons[uiIndex].Select();
+                        uiButtons[uiIndex].gameObject.SetActive(true);
+                    }
+                    else
+                    {
+                        uiTime = 0f;
+                    }
+                }
+                else if (controllerWirelessArray[player, 0] == 2)
+                {
+                    uiTime = 0.4f;
+                    uiIndex += 1;
+                    if (uiIndex > uiButtons.Length - 1)
+                    {
+                        uiIndex = 0;
+                    }
+                    if (uiButtons[uiIndex].interactable == true)
+                    {
+                        uiButtons[uiIndex].Select();
+                        uiButtons[uiIndex].gameObject.SetActive(true);
+                    }
+                    else
+                    {
+                        uiTime = 0f;
+                    }
+                }
+                else if (controllerWirelessArray[player, 5] == 1)
+                {
+                    uiTime = 0.4f;
+                    if (uiButtons[uiIndex].interactable == true)
+                    {
+                        uiButtons[uiIndex].onClick.Invoke();
+                    }
+                    else
+                    {
+                        uiTime = 0f;
+                    }
+                }
+            }
         }
     }
 
     public static bool GetButton(int player, int button)
     {
-        if(connectedViaBluetooth)
+        if(connectedViaWiFi || connectedViaBluetooth)
         {
             if(button == 0)
             {
-                if (controllerBleArray[player, 5] == 16 || controllerBleArray[player, 5] == 17)
+                if (controllerWirelessArray[player, 5] == 16 || controllerWirelessArray[player, 5] == 17)
                 {
                     return true;
                 }
@@ -124,7 +238,7 @@ public class CirCl : MonoBehaviour
             }
             else
             {
-                if (controllerBleArray[player, 5] == 1 || controllerBleArray[player, 5] == 17)
+                if (controllerWirelessArray[player, 5] == 1 || controllerWirelessArray[player, 5] == 17)
                 {
                     return true;
                 }
@@ -142,21 +256,21 @@ public class CirCl : MonoBehaviour
 
     public static bool GetButtonDown(int player, int button)
     {
-        if (connectedViaBluetooth)
+        if (connectedViaWiFi || connectedViaBluetooth)
         {
-            if (controllerBleArray[player, 5] == 0)
+            if (controllerWirelessArray[player, 5] == 0)
             {
                 buttonDownArray[player, 0] = false;
                 buttonDownArray[player, 1] = false;
                 return false;
             }
-            else if (controllerBleArray[player, 5] == 1 && buttonDownArray[player, 1] == false && button == 1)
+            else if (controllerWirelessArray[player, 5] == 1 && buttonDownArray[player, 1] == false && button == 1)
             {
                 buttonDownArray[player, 0] = false;
                 buttonDownArray[player, 1] = true;
                 return true;
             }
-            else if (controllerBleArray[player, 5] == 16 && buttonDownArray[player, 0] == false && button == 0)
+            else if (controllerWirelessArray[player, 5] == 16 && buttonDownArray[player, 0] == false && button == 0)
             {
                 buttonDownArray[player, 0] = true;
                 buttonDownArray[player, 1] = false;
@@ -176,24 +290,24 @@ public class CirCl : MonoBehaviour
 
     public static bool GetButtonUp(int player, int button)
     {
-        if (connectedViaBluetooth)
+        if (connectedViaWiFi || connectedViaBluetooth)
         {
-            if (controllerBleArray[player, 5] == 17)
+            if (controllerWirelessArray[player, 5] == 17)
             {
-                buttonDownArray[player, 0] = false;
-                buttonDownArray[player, 1] = false;
+                buttonUpArray[player, 0] = false;
+                buttonUpArray[player, 1] = false;
                 return false;
             }
-            else if (controllerBleArray[player, 5] == 16 && buttonDownArray[player, 1] == false && button == 1)
+            else if (controllerWirelessArray[player, 5] == 16 && buttonUpArray[player, 1] == false && button == 1)
             {
-                buttonDownArray[player, 0] = false;
-                buttonDownArray[player, 1] = true;
+                buttonUpArray[player, 0] = false;
+                buttonUpArray[player, 1] = true;
                 return true;
             }
-            else if (controllerBleArray[player, 5] == 1 && buttonDownArray[player, 0] == false && button == 0)
+            else if (controllerWirelessArray[player, 5] == 1 && buttonUpArray[player, 0] == false && button == 0)
             {
-                buttonDownArray[player, 0] = true;
-                buttonDownArray[player, 1] = false;
+                buttonUpArray[player, 0] = true;
+                buttonUpArray[player, 1] = false;
                 return true;
             }
             else
@@ -211,13 +325,13 @@ public class CirCl : MonoBehaviour
     {
         if(axis == 'h')
         {
-            if (connectedViaBluetooth)
+            if (connectedViaWiFi || connectedViaBluetooth)
             {
-                if (controllerBleArray[player, 0] == 1)
+                if (controllerWirelessArray[player, 0] == 1)
                 {
                     return -1.0f;
                 }
-                else if (controllerBleArray[player, 0] == 2)
+                else if (controllerWirelessArray[player, 0] == 2)
                 {
                     return 1.0f;
                 }
@@ -236,13 +350,13 @@ public class CirCl : MonoBehaviour
         }
         else if(axis == 'v')
         {
-            if (connectedViaBluetooth)
+            if (connectedViaWiFi || connectedViaBluetooth)
             {
-                if (controllerBleArray[player, 1] == 1)
+                if (controllerWirelessArray[player, 1] == 1)
                 {
                     return -1.0f;
                 }
-                else if (controllerBleArray[player, 1] == 2)
+                else if (controllerWirelessArray[player, 1] == 2)
                 {
                     return 1.0f;
                 }
@@ -261,6 +375,122 @@ public class CirCl : MonoBehaviour
         }
         return 0.0f;
     }
+#endregion
+
+#region Console WiFi Interface
+    //-------------------------------------------------------------------------
+    private UdpClient clientData;
+    private IPEndPoint ipEndPointData;
+    private int portData = 4321;
+    private int receiveBufferSize = 72;
+    private object obj = null;
+    private AsyncCallback AC;
+    private int packageCounter = 0;
+    private float packageTimer = 1f;
+
+    private string StatusWiFi
+    {
+        set
+        {
+            stateText.text = value.ToString();
+        }
+    }
+
+    private void StartWiFiProcess()
+    {
+        if (readingWiFiActive == false)
+        {
+            readingWiFiActive = true;
+            InitializeUDPListener();
+            //socketThread = new Thread(new ThreadStart(Test));
+            //socketThread.IsBackground = true;
+            //socketThread.Start();
+        }
+    }
+
+    private void ReceiveWiFiData(byte[] byte_array)
+    {
+        for (int i = 0; i < 8; i++)
+        {
+            controllerWirelessArray[i, 0] = byte_array[i * 9];
+            controllerWirelessArray[i, 1] = byte_array[i * 9 + 1];
+            controllerWirelessArray[i, 2] = BitConverter.ToInt16(new byte[] { byte_array[i * 9 + 3], byte_array[i * 9 + 2] }, 0);
+            controllerWirelessArray[i, 3] = BitConverter.ToInt16(new byte[] { byte_array[i * 9 + 5], byte_array[i * 9 + 4] }, 0);
+            controllerWirelessArray[i, 4] = BitConverter.ToInt16(new byte[] { byte_array[i * 9 + 7], byte_array[i * 9 + 6] }, 0);
+            controllerWirelessArray[i, 5] = byte_array[i * 9 + 8];
+        }
+        //packageCounter += 1;
+        //onWiFiInput(controllerWirelessArray);
+        connectedViaWiFi = true;
+    }
+
+    public void InitializeUDPListener()
+    {
+        ipEndPointData = new IPEndPoint(IPAddress.Any, portData);
+        clientData = new UdpClient();
+        clientData.Client.ReceiveBufferSize = receiveBufferSize;
+        clientData.EnableBroadcast = true;
+        clientData.Client.Bind(ipEndPointData);
+        AC = new AsyncCallback(ReceivedUDPPacket);
+        clientData.BeginReceive(AC, obj);
+        StatusWiFi = "";
+    }
+
+    void ReceivedUDPPacket(IAsyncResult result)
+    {
+        //stopwatch.Start();
+        byte[] receivedBytes = clientData.EndReceive(result, ref ipEndPointData);
+
+        ReceiveWiFiData(receivedBytes);
+
+        clientData.BeginReceive(AC, obj);
+    }
+
+
+    void OnDestroy()
+    {
+        if (clientData != null)
+        {
+            clientData.Close();
+        }
+    }
+#endregion
+
+#region Console BLE Interface
+    //-------------------------------------------------------------------------
+    private static float timer = 0f;
+    private static string _deviceName = "CirCl";
+    private static string _serviceUUID = "e80f2064-7a9e-4c5b-91bb-ae5557952a0c";
+    private static string _characteristicUUID = "e5282bd6-337a-4244-b4f0-0e73bd4c34b5";
+    private static float _timeout = 0f;
+    private static States _state = States.Idle;
+    private static string _deviceAddress;
+    private static bool _foundCharacteristicUUID = false;
+    private static bool _rssiOnly = false;
+    private enum States
+    {
+        Idle,
+        Scan,
+        ScanRSSI,
+        ReadRSSI,
+        Read,
+        Connect,
+        RequestMTU,
+        Subscribe,
+        Waiting,
+        Unsubscribe,
+        Disconnect,
+    }
+
+    private string StatusBle
+    {
+        set
+        {
+            //BluetoothLEHardwareInterface.Log(value);
+            connectionStateBle = value.ToString();
+            stateText.text = value.ToString();
+        }
+    }
 
     private void Reset()
     {
@@ -277,75 +507,18 @@ public class CirCl : MonoBehaviour
         _timeout = timeout;
     }
 
-    private void Start()
+    private void ReceiveBleData(byte[] byte_array)
     {
-        StartProcess();
-    }
-
-    private void ReceiveData(byte[] byte_array)
-    {
-        //int joy_id = byte_array[0];
-        if(byte_array[0] == 1)
+        for (int i = 0; i < 8; i++)
         {
-            controllerBleArray[0, 0] = byte_array[1];
-            controllerBleArray[0, 1] = byte_array[2];
-            controllerBleArray[0, 2] = BitConverter.ToInt16(new byte[] { byte_array[4], byte_array[3] }, 0);
-            controllerBleArray[0, 3] = BitConverter.ToInt16(new byte[] { byte_array[6], byte_array[5] }, 0);
-            controllerBleArray[0, 4] = BitConverter.ToInt16(new byte[] { byte_array[8], byte_array[7] }, 0);
-            controllerBleArray[0, 5] = byte_array[9];
-            controllerBleArray[1, 0] = byte_array[10];
-            controllerBleArray[1, 1] = byte_array[11];
-            controllerBleArray[1, 2] = BitConverter.ToInt16(new byte[] { byte_array[13], byte_array[12] }, 0);
-            controllerBleArray[1, 3] = BitConverter.ToInt16(new byte[] { byte_array[15], byte_array[14] }, 0);
-            controllerBleArray[1, 4] = BitConverter.ToInt16(new byte[] { byte_array[17], byte_array[16] }, 0);
-            controllerBleArray[1, 5] = byte_array[18];
+            controllerWirelessArray[i, 0] = byte_array[i * 9];
+            controllerWirelessArray[i, 1] = byte_array[i * 9 + 1];
+            controllerWirelessArray[i, 2] = BitConverter.ToInt16(new byte[] { byte_array[i * 9 + 3], byte_array[i * 9 + 2] }, 0);
+            controllerWirelessArray[i, 3] = BitConverter.ToInt16(new byte[] { byte_array[i * 9 + 5], byte_array[i * 9 + 4] }, 0);
+            controllerWirelessArray[i, 4] = BitConverter.ToInt16(new byte[] { byte_array[i * 9 + 7], byte_array[i * 9 + 6] }, 0);
+            controllerWirelessArray[i, 5] = byte_array[i * 9 + 8];
         }
-        if (byte_array[0] == 2)
-        {
-            controllerBleArray[2, 0] = byte_array[1];
-            controllerBleArray[2, 1] = byte_array[2];
-            controllerBleArray[2, 2] = BitConverter.ToInt16(new byte[] { byte_array[4], byte_array[3] }, 0);
-            controllerBleArray[2, 3] = BitConverter.ToInt16(new byte[] { byte_array[6], byte_array[5] }, 0);
-            controllerBleArray[2, 4] = BitConverter.ToInt16(new byte[] { byte_array[8], byte_array[7] }, 0);
-            controllerBleArray[2, 5] = byte_array[9];
-            controllerBleArray[3, 0] = byte_array[10];
-            controllerBleArray[3, 1] = byte_array[11];
-            controllerBleArray[3, 2] = BitConverter.ToInt16(new byte[] { byte_array[13], byte_array[12] }, 0);
-            controllerBleArray[3, 3] = BitConverter.ToInt16(new byte[] { byte_array[15], byte_array[14] }, 0);
-            controllerBleArray[3, 4] = BitConverter.ToInt16(new byte[] { byte_array[17], byte_array[16] }, 0);
-            controllerBleArray[3, 5] = byte_array[18];
-        }
-        if (byte_array[0] == 3)
-        {
-            controllerBleArray[4, 0] = byte_array[1];
-            controllerBleArray[4, 1] = byte_array[2];
-            controllerBleArray[4, 2] = BitConverter.ToInt16(new byte[] { byte_array[4], byte_array[3] }, 0);
-            controllerBleArray[4, 3] = BitConverter.ToInt16(new byte[] { byte_array[6], byte_array[5] }, 0);
-            controllerBleArray[4, 4] = BitConverter.ToInt16(new byte[] { byte_array[8], byte_array[7] }, 0);
-            controllerBleArray[4, 5] = byte_array[9];
-            controllerBleArray[5, 0] = byte_array[10];
-            controllerBleArray[5, 1] = byte_array[11];
-            controllerBleArray[5, 2] = BitConverter.ToInt16(new byte[] { byte_array[13], byte_array[12] }, 0);
-            controllerBleArray[5, 3] = BitConverter.ToInt16(new byte[] { byte_array[15], byte_array[14] }, 0);
-            controllerBleArray[5, 4] = BitConverter.ToInt16(new byte[] { byte_array[17], byte_array[16] }, 0);
-            controllerBleArray[5, 5] = byte_array[18];
-        }
-        if (byte_array[0] == 4)
-        {
-            controllerBleArray[6, 0] = byte_array[1];
-            controllerBleArray[6, 1] = byte_array[2];
-            controllerBleArray[6, 2] = BitConverter.ToInt16(new byte[] { byte_array[4], byte_array[3] }, 0);
-            controllerBleArray[6, 3] = BitConverter.ToInt16(new byte[] { byte_array[6], byte_array[5] }, 0);
-            controllerBleArray[6, 4] = BitConverter.ToInt16(new byte[] { byte_array[8], byte_array[7] }, 0);
-            controllerBleArray[6, 5] = byte_array[9];
-            controllerBleArray[7, 0] = byte_array[10];
-            controllerBleArray[7, 1] = byte_array[11];
-            controllerBleArray[7, 2] = BitConverter.ToInt16(new byte[] { byte_array[13], byte_array[12] }, 0);
-            controllerBleArray[7, 3] = BitConverter.ToInt16(new byte[] { byte_array[15], byte_array[14] }, 0);
-            controllerBleArray[7, 4] = BitConverter.ToInt16(new byte[] { byte_array[17], byte_array[16] }, 0);
-            controllerBleArray[7, 5] = byte_array[18];
-        }
-        onBluetoothInput(controllerBleArray);
+        onBluetoothInput(controllerWirelessArray);
     }
 
     private string FullUUID(string uuid)
@@ -367,22 +540,19 @@ public class CirCl : MonoBehaviour
         return (uuid1.ToUpper().Equals(uuid2.ToUpper()));
     }
 
-    private void StartProcess()
+    private void StartBleProcess()
     {
         Reset();
         BluetoothLEHardwareInterface.Initialize(true, false, () =>
         {
-
             SetState(States.Scan, 0.1f);
-
         }, (error) =>
         {
-
-            StatusMessage = "";// + error;
+            StatusBle = "";// + error;
         });
-        if (readingActive == false)
+        if (readingBleActive == false)
         {
-            readingActive = true;
+            readingBleActive = true;
             StartCoroutine(ConnectBluetoothInterface());
         }
     }
@@ -403,14 +573,14 @@ public class CirCl : MonoBehaviour
                         case States.Idle:
                             break;
                         case States.Scan:
-                            StatusMessage = "SCANNING FOR CIRCL ...";
+                            StatusBle = "SCANNING FOR CIRCL ...";
                             BluetoothLEHardwareInterface.ScanForPeripheralsWithServices(null, (address, name) =>
                             {
                                 if (!_rssiOnly)
                                 {
                                     if (name.Contains(_deviceName))
                                     {
-                                        StatusMessage = "FOUND CIRCL!";
+                                        StatusBle = "FOUND CIRCL!";
                                         _deviceAddress = address;
                                         SetState(States.Connect, 0.5f);
                                     }
@@ -419,43 +589,52 @@ public class CirCl : MonoBehaviour
                             {
                                 if (name.Contains(_deviceName))
                                 {
-                                    StatusMessage = "FOUND CIRCL!";
+                                    StatusBle = "FOUND CIRCL!";
                                     _deviceAddress = address;
                                     SetState(States.Connect, 0.5f);
                                 }
                             }, false);
                             break;
                         case States.Connect:
-                            StatusMessage = "CONNECTING TO CIRCL ...";
+                            StatusBle = "CONNECTING TO CIRCL ...";
                             _foundCharacteristicUUID = false;
                             BluetoothLEHardwareInterface.ConnectToPeripheral(_deviceAddress, null, null, (address, serviceUUID, characteristicUUID) =>
                             {
-                                StatusMessage = "CONNECTED!";
+                                StatusBle = "CONNECTED!";
                                 BluetoothLEHardwareInterface.StopScan();
                                 if (IsEqual(serviceUUID, _serviceUUID))
                                 {
-                                    StatusMessage = "FOUND CIRCL!";
+                                    StatusBle = "FOUND CIRCL!";
                                     _foundCharacteristicUUID = _foundCharacteristicUUID || IsEqual(characteristicUUID, _characteristicUUID);
                                     if (_foundCharacteristicUUID)
                                     {
                                         connectedViaBluetooth = true;
-                                        SetState(States.Subscribe, 2f);
+                                        SetState(States.RequestMTU, 2f);
                                     }
                                 }
                             });
                             break;
+                        case States.RequestMTU:
+                            StatusBle = "REQUESTING MTU ...";
+                            BluetoothLEHardwareInterface.RequestMtu(_deviceAddress, 76, (address, newMTU) =>
+                            {
+                                StatusBle = "MTU SET TO " + newMTU.ToString();
+
+                                SetState(States.Subscribe, 0.1f);
+                            });
+                            break;
                         case States.Subscribe:
-                            StatusMessage = "SUBSCRIBING TO CIRCL ...";
+                            StatusBle = "SUBSCRIBING TO CIRCL ...";
                             BluetoothLEHardwareInterface.SubscribeCharacteristicWithDeviceAddress(_deviceAddress, _serviceUUID, _characteristicUUID, (notifyAddress, notifyCharacteristic) =>
                             {
                                 BluetoothLEHardwareInterface.ReadCharacteristic(_deviceAddress, _serviceUUID, _characteristicUUID, (characteristic, bytes) =>
                                 {
-                                    ReceiveData(bytes);
+                                    ReceiveBleData(bytes);
                                 });
                             }, (address, characteristicUUID, bytes) =>
                             {
                                 timer = 0f;
-                                ReceiveData(bytes);
+                                ReceiveBleData(bytes);
                             });
                             SetState(States.Waiting, 0.1f);
                             break;
@@ -474,12 +653,12 @@ public class CirCl : MonoBehaviour
                             SetState(States.Disconnect, 4f);
                             break;
                         case States.Disconnect:
-                            StatusMessage = "DISCONNECTED!";
+                            StatusBle = "DISCONNECTED!";
                             if (connectedViaBluetooth)
                             {
                                 BluetoothLEHardwareInterface.DisconnectPeripheral(_deviceAddress, (address) =>
                                 {
-                                    StatusMessage = "DISCONNECTED!";
+                                    StatusBle = "DISCONNECTED!";
                                     BluetoothLEHardwareInterface.DeInitialize(() =>
                                     {
                                         connectedViaBluetooth = false;
@@ -501,4 +680,5 @@ public class CirCl : MonoBehaviour
             yield return new WaitForSeconds(0.001f);
         }
     }
+#endregion
 }

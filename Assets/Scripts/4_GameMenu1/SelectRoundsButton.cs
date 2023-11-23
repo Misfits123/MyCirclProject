@@ -66,7 +66,5 @@ public class SelectRoundsButton : MonoBehaviour {
     {
         // set button active
         okButton.GetComponent<Button>().interactable = true;
-        okButton.GetComponent<Button>().Select();
-        okButton.GetComponent<Button>().gameObject.SetActive(true);
     }
 }

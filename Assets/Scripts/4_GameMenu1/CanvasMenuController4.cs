@@ -71,5 +71,9 @@ public class CanvasMenuController4 : MonoBehaviour
                 }
             }
         }
+        else
+        {
+            CirCl.SelectUiButton(CommonValues.iEventSystemPlayer);
+        }
     }
 }

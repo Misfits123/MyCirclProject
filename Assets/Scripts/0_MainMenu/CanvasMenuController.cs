@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
 //using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
@@ -25,7 +24,6 @@ public class CanvasMenuController : MonoBehaviour
     private Text gameInfoText;
     //private Text gamePlayerText;
     //private GameObject gamePlayer;
-    private StandaloneInputModule eventSystemPlayer;
     private GameObject popUpPlayerAssignment;
     private GameObject maskPopUpPlayerAssignment;
     private bool isCoroutineStarted = false;
@@ -44,7 +42,6 @@ public class CanvasMenuController : MonoBehaviour
         gameInfoText = GameObject.Find("GameInfo").GetComponent<Text>();
         //gamePlayerText = GameObject.Find("GamePlayer").GetComponent<Text>();
         //gamePlayer = GameObject.Find("GamePlayer");
-        eventSystemPlayer = GameObject.Find("EventSystem").GetComponent<StandaloneInputModule>();
         popUpPlayerAssignment = GameObject.Find("CanvasSceneless").transform.Find("PopUpPlayerAssignment").gameObject;
         maskPopUpPlayerAssignment = popUpPlayerAssignment.transform.Find("Mask").gameObject;
 
@@ -65,19 +62,6 @@ public class CanvasMenuController : MonoBehaviour
             CommonValues.bPopUpActive = true;
             oCanvasObjectArray[iPopUpStart].gameObject.SetActive(true);
         }
-
-        //// don't show player assignment
-        //maskPopUpPlayerAssignment.SetActive(false);
-        //popUpPlayerAssignment.SetActive(false);
-
-        // joystick debug output
-        //debug = GameObject.Find("DebugText").GetComponent<Text>();
-        //var joystickNames = InputSystem.devices;
-        //foreach (var joystick in joystickNames)
-        //{
-        //    debug.text += joystick.ToString();
-        //    debug.text += "; ";
-        //}
     }
 
     void Start()
@@ -98,12 +82,11 @@ public class CanvasMenuController : MonoBehaviour
             {
                 if (CirCl.GetButtonDown(i, 0) && iPopUpCounter == 0)
                 {
-                    CommonValues.iEventSystemPlayer = i + 1;
-                    SetEventSystemPlayer();
                     // start
                     if (isCoroutineStarted == false)
                     {
                         isCoroutineStarted = true;
+                        CommonValues.iEventSystemPlayer = i;
                         StartCoroutine(delayedPopUpChange());
                     }
                 }
@@ -117,6 +100,10 @@ public class CanvasMenuController : MonoBehaviour
         if(isMenuMusicStarted == true && debounceButtonTime > 0f)
         {
             debounceButtonTime -= Time.deltaTime;
+        }
+        if(debounceButtonTime <= 0f)
+        {
+            CirCl.SelectUiButton(CommonValues.iEventSystemPlayer);
         }
     }
 
@@ -272,16 +259,6 @@ public class CanvasMenuController : MonoBehaviour
         }
     }
 
-    //public void ClickJoystickSettingButton()
-    //{
-    //    // if button is active
-    //    if (CommonValues.bPopUpActive == false)
-    //    {
-    //        popUpPlayerAssignment.SetActive(true);
-    //        maskPopUpPlayerAssignment.SetActive(true);
-    //    }
-    //}
-
     public void ClickHomepageButton()
     {
         if (CommonValues.bGermanLanguage == true)
@@ -298,8 +275,6 @@ public class CanvasMenuController : MonoBehaviour
     {
         // set button active
         gameObject.transform.Find("NewGameButton").gameObject.GetComponent<Button>().interactable = true;
-        gameObject.transform.Find("NewGameButton").gameObject.GetComponent<Button>().Select();
-        gameObject.transform.Find("NewGameButton").gameObject.GetComponent<Button>().gameObject.SetActive(true);
     }
 
     private void GetSavedSettings()
@@ -377,37 +352,6 @@ public class CanvasMenuController : MonoBehaviour
                 gameMusicText.text = "MUSIC: OFF";
             }
         }
-        //if (PlayerPrefs.GetInt("GermanLanguage") == 1)
-        //{
-        //    gamePlayerText.text = "SPIELER EINSTELLUNG";
-        //}
-        //else
-        //{
-        //    gamePlayerText.text = "PLAYER SETTING";
-        //}
-        //if (PlayerPrefs.GetInt("PlayerAssignment") == 1)
-        //{
-        //    for (int i = 1; i <= CommonValues.MaxNumberOfPlayers; i++)
-        //    {
-        //        int lastPosition = PlayerPrefs.GetInt("PlayerPosition" + i.ToString());
-        //        //9 = last position was free
-        //        if (lastPosition == 9)
-        //        {
-        //            CommonValues.sControllerInputArray[i - 1, 0] = "P9_Horizontal";
-        //            CommonValues.sControllerInputArray[i - 1, 1] = "P9_Vertical";
-        //            CommonValues.sControllerInputArray[i - 1, 2] = "P9_Button1";
-        //            CommonValues.sControllerInputArray[i - 1, 3] = "P9_Button0";
-        //        }
-        //        else
-        //        {
-        //            CommonValues.sControllerInputArray[i - 1, 0] = CommonValues.sControllerDefaultArray[lastPosition - 1, 0];
-        //            CommonValues.sControllerInputArray[i - 1, 1] = CommonValues.sControllerDefaultArray[lastPosition - 1, 1];
-        //            CommonValues.sControllerInputArray[i - 1, 2] = CommonValues.sControllerDefaultArray[lastPosition - 1, 2];
-        //            CommonValues.sControllerInputArray[i - 1, 3] = CommonValues.sControllerDefaultArray[lastPosition - 1, 3];
-        //        }
-        //    }
-        //    CommonValues.iEventSystemPlayer = PlayerPrefs.GetInt("EventSystemPlayer");
-        //}
     }
 
     public void ClickNewGameButton()
@@ -472,15 +416,6 @@ public class CanvasMenuController : MonoBehaviour
             }
             Application.Quit();
         }
-    }
-
-    private void SetEventSystemPlayer()
-    {
-        eventSystemPlayer = GameObject.Find("EventSystem").gameObject.GetComponent<StandaloneInputModule>();
-        eventSystemPlayer.horizontalAxis = "P" + CommonValues.iEventSystemPlayer.ToString() + "_Horizontal";
-        eventSystemPlayer.verticalAxis = "P" + CommonValues.iEventSystemPlayer.ToString() + "_Vertical";
-        eventSystemPlayer.submitButton = "P" + CommonValues.iEventSystemPlayer.ToString() + "_Button1";
-        eventSystemPlayer.cancelButton = "P" + CommonValues.iEventSystemPlayer.ToString() + "_Button0";
     }
 
     IEnumerator delayedPopUpChange()
