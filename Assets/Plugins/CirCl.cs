@@ -89,14 +89,10 @@ public class CirCl : MonoBehaviour
 
     private void Start()
     {
-#if UNITY_ANDROID
-        StartBleProcess();
-#endif
-#if UNITY_IOS
-        StartBleProcess();
-#endif
 #if UNITY_EDITOR
         StartWiFiProcess();
+#else
+        StartBleProcess();
 # endif
     }
 
