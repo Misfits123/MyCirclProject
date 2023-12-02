@@ -91,9 +91,9 @@ public class CirCl : MonoBehaviour
     {
 #if UNITY_EDITOR
         StartWiFiProcess();
-#else
+#else 
         StartBleProcess();
-# endif
+#endif
     }
 
     private void OnEnable()
@@ -308,7 +308,7 @@ public class CirCl : MonoBehaviour
             }
             else
             {
-                return false;
+                return true;
             }
         }
         else
