@@ -103,7 +103,7 @@ public class CanvasMenuController : MonoBehaviour
         }
         if(debounceButtonTime <= 0f)
         {
-            CirCl.SelectUiButton(CommonValues.iEventSystemPlayer);
+            CirCl.SelectUiButton(CommonValues.iEventSystemPlayer, 'h');
         }
     }
 

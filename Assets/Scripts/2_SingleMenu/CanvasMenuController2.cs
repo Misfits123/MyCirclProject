@@ -73,7 +73,7 @@ public class CanvasMenuController2 : MonoBehaviour
         }
         else
         {
-            CirCl.SelectUiButton(CommonValues.iEventSystemPlayer);
+            CirCl.SelectUiButton(CommonValues.iEventSystemPlayer, 'h');
         }
     }
 }

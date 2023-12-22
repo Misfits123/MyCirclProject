@@ -112,7 +112,7 @@ public class CirCl : MonoBehaviour
         uiIndex = 0;
     }
 
-#region Testing + Debugging
+    #region Testing + Debugging
     //int changes = 0;
     //bool test = false;
 
@@ -155,17 +155,22 @@ public class CirCl : MonoBehaviour
     //        stateText.text = changes.ToString() + " | " + packageCounter.ToString();
     //    }
     //}
-#endregion
+    #endregion
 
-#region Controller Input
-    public static void SelectUiButton(int player)
+    #region Controller Input
+    public static void SelectUiButton(int player, char direction)
     {
-        if(connectedViaWiFi || connectedViaBluetooth)
+        int i_direction = 0;
+        if (direction == 'v')
+        {
+            i_direction = 1;
+        }
+        if (connectedViaWiFi || connectedViaBluetooth)
         {
             uiTime -= Time.deltaTime;
-            if(uiTime < 0f)
+            if (uiTime < 0f)
             {
-                if (controllerWirelessArray[player, 0] == 1)
+                if (controllerWirelessArray[player, i_direction] == 1)
                 {
                     uiTime = 0.4f;
                     uiIndex -= 1;
@@ -183,7 +188,7 @@ public class CirCl : MonoBehaviour
                         uiTime = 0f;
                     }
                 }
-                else if (controllerWirelessArray[player, 0] == 2)
+                else if (controllerWirelessArray[player, i_direction] == 2)
                 {
                     uiTime = 0.4f;
                     uiIndex += 1;
@@ -272,6 +277,12 @@ public class CirCl : MonoBehaviour
                 buttonDownArray[player, 1] = false;
                 return true;
             }
+            else if (controllerWirelessArray[player, 5] == 17 && buttonDownArray[player, 0] == false && buttonDownArray[player, 1] == false)
+            {
+                buttonDownArray[player, 0] = true;
+                buttonDownArray[player, 1] = true;
+                return true;
+            }
             else
             {
                 return false;
@@ -288,27 +299,27 @@ public class CirCl : MonoBehaviour
     {
         if (connectedViaWiFi || connectedViaBluetooth)
         {
-            if (controllerWirelessArray[player, 5] == 17)
+            if (controllerWirelessArray[player, 5] == 16 || controllerWirelessArray[player, 5] == 17)
             {
                 buttonUpArray[player, 0] = false;
+            }
+            if (controllerWirelessArray[player, 5] == 1 || controllerWirelessArray[player, 5] == 17)
+            {
                 buttonUpArray[player, 1] = false;
-                return false;
             }
-            else if (controllerWirelessArray[player, 5] == 16 && buttonUpArray[player, 1] == false && button == 1)
-            {
-                buttonUpArray[player, 0] = false;
-                buttonUpArray[player, 1] = true;
-                return true;
-            }
-            else if (controllerWirelessArray[player, 5] == 1 && buttonUpArray[player, 0] == false && button == 0)
+            if ((controllerWirelessArray[player, 5] == 0 || controllerWirelessArray[player, 5] == 1) && buttonUpArray[player, 0] == false && button == 0)
             {
                 buttonUpArray[player, 0] = true;
-                buttonUpArray[player, 1] = false;
+                return true;
+            }
+            else if ((controllerWirelessArray[player, 5] == 0 || controllerWirelessArray[player, 5] == 16) && buttonUpArray[player, 1] == false && button == 1)
+            {
+                buttonUpArray[player, 1] = true;
                 return true;
             }
             else
             {
-                return true;
+                return false;
             }
         }
         else

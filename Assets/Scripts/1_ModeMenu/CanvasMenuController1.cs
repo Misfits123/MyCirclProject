@@ -18,7 +18,7 @@ public class CanvasMenuController1 : MonoBehaviour
                     SceneManager.LoadScene(CommonValues.sSceneArray[0]);
                 }
             }
-            CirCl.SelectUiButton(CommonValues.iEventSystemPlayer);
+            CirCl.SelectUiButton(CommonValues.iEventSystemPlayer, 'h');
         }
     }
 }

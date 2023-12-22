@@ -75,7 +75,7 @@ public class CanvasGameController6 : MonoBehaviour {
                 RoundsText2.text = "RUNDE";
                 RoundsText4.text = "RUNDE";
             }
-            CirCl.SelectUiButton(CommonValues.iEventSystemPlayer);
+            CirCl.SelectUiButton(CommonValues.iEventSystemPlayer, 'h');
         }     
 	}
 }
